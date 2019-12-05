@@ -1,6 +1,7 @@
 package com.melalex.bpp.service.cassandra;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,9 +35,14 @@ public class CassandraStrategyResolver implements StrategyResolver {
   }
 
   @Override
-  public void setStrategies(List<Object> strategies) {
+  public void setStrategies(List<?> strategies) {
     registry = strategies.stream()
         .map(o -> Map.entry(o.getClass().getAnnotation(CassandraSwitch.class).match(), o))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  @Override
+  public Collection<Object> availableStrategies() {
+    return registry.values();
   }
 }
