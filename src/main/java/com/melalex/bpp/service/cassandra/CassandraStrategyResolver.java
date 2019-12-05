@@ -1,5 +1,6 @@
 package com.melalex.bpp.service.cassandra;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,7 +21,7 @@ public class CassandraStrategyResolver implements StrategyResolver {
   private UserContext userContext;
 
   @Override
-  public Object resolve() {
+  public Object resolve(Method method, Object[] args) {
     final var strategy = registry.get(userContext.isCassandra());
 
     if (strategy == null) {
