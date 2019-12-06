@@ -2,6 +2,7 @@ package com.melalex.bpp.web.filter;
 
 
 import java.io.IOException;
+import java.util.Optional;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -22,12 +23,15 @@ public class CassandraSwitchFilter implements Filter {
   private final UserContext userContext;
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      final ServletRequest request, final ServletResponse response, final FilterChain chain)
       throws IOException, ServletException {
 
-    HttpServletRequest req = (HttpServletRequest) request;
+    final var req = (HttpServletRequest) request;
 
-    final boolean cassandraSwitch = Boolean.parseBoolean(req.getHeader("CassandraSwitch"));
+    final boolean cassandraSwitch = Optional.ofNullable(req.getHeader("CassandraSwitch"))
+        .map(Boolean::parseBoolean)
+        .orElse(false);
 
     userContext.setCassandra(cassandraSwitch);
 

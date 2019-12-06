@@ -3,14 +3,14 @@ package com.melalex.bpp.service.impl;
 import org.springframework.stereotype.Service;
 
 import com.melalex.bpp.service.PingService;
-import com.melalex.bpp.service.cassandra.CassandraSwitch;
+import com.melalex.bpp.service.cassandra.JdbcStrategy;
 import com.melalex.bpp.web.session.UserContext;
 
 @Service
-@CassandraSwitch(baseInterface = PingService.class, match = false)
+@JdbcStrategy(PingService.class)
 public class PingJdbcService extends AbstractPingService {
 
-  public PingJdbcService(UserContext userContext) {
+  public PingJdbcService(final UserContext userContext) {
     super(userContext);
   }
 

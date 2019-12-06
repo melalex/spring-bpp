@@ -9,16 +9,13 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 
 import com.melalex.bpp.strategy.DefaultBaseInterface;
-import com.melalex.bpp.strategy.Strategy;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Strategy(resolver = CassandraStrategyResolver.class)
-public @interface CassandraSwitch {
+@CassandraSwitch(match = true)
+public @interface CassandraStrategy {
 
-  @AliasFor(annotation = Strategy.class)
-  Class<?> baseInterface() default DefaultBaseInterface.class;
-
-  boolean match();
+  @AliasFor(annotation = CassandraSwitch.class, attribute = "baseInterface")
+  Class<?> value() default DefaultBaseInterface.class;
 }
