@@ -11,7 +11,5 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Strategy {
 
-  Class<? extends StrategyResolver> resolver();
-
   Class<?> baseInterface() default DefaultBaseInterface.class;
 }

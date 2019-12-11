@@ -14,7 +14,7 @@ import com.melalex.bpp.strategy.Strategy;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Strategy(resolver = CassandraStrategyResolver.class)
+@Strategy
 public @interface CassandraSwitch {
 
   @AliasFor(annotation = Strategy.class)

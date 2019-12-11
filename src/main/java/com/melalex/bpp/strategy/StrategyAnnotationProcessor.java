@@ -2,6 +2,8 @@ package com.melalex.bpp.strategy;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -13,10 +15,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.experimental.Delegate;
+
+import com.melalex.bpp.util.SupplierUtils;
 
 @AllArgsConstructor
 public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
@@ -32,16 +37,29 @@ public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
 
     final var strategyDefinition = Arrays
         .stream(beanFactory.getBeanNamesForAnnotation(Strategy.class))
-        .map(n -> createStrategyDefinition(n, beanFactory))
+        .map(n -> this.createStrategyDefinition(n, beanFactory))
         .collect(Collectors.groupingBy(this::classifyInterface));
+
+    final var resolvers = SupplierUtils
+        .memoize(() -> Arrays.stream(beanFactory.getBeanNamesForType(StrategyResolver.class))
+            .map(beanFactory::getBean)
+            .map(StrategyResolver.class::cast)
+            .map(b -> Map.entry(b.getAnnotationType(), b))
+            .collect(Collectors.toUnmodifiableList())
+        );
 
     final var registry = (BeanDefinitionRegistry) beanFactory;
 
     strategyDefinition.forEach((metaData, beanDefinitions) -> {
       beanDefinitions.forEach(d -> d.setAutowireCandidate(false));
 
-      final var resolverDefinition = createResolverDefinition(beanFactory, metaData,
-          beanDefinitions);
+      final var resolverDefinition = this.createProviderDefinition(
+          beanFactory,
+          metaData,
+          beanDefinitions,
+          resolvers
+      );
+
       final var resolverName = BeanDefinitionReaderUtils
           .generateBeanName(resolverDefinition, registry);
 
@@ -50,11 +68,11 @@ public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
   }
 
 
-  private ProviderMetaData classifyInterface(final StrategyBeanDefinition definition) {
-    final Class<?> interfaceClass;
+  private Class<?> classifyInterface(final StrategyBeanDefinition definition) {
+    final Class<?> result;
 
     if (definition.baseInterface() != DefaultBaseInterface.class) {
-      interfaceClass = definition.baseInterface();
+      result = definition.baseInterface();
     } else {
       final var interfaces = definition.getType().getInterfaces();
 
@@ -64,10 +82,10 @@ public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
                 + " ] super interface. Required [ 1 ].");
       }
 
-      interfaceClass = interfaces[0];
+      result = interfaces[0];
     }
 
-    return new ProviderMetaData(interfaceClass, definition.resolver());
+    return result;
   }
 
   private StrategyBeanDefinition createStrategyDefinition(
@@ -85,30 +103,42 @@ public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
     return new StrategyBeanDefinition(beanDefinition, annotationOnBean, name, type);
   }
 
-  private BeanDefinition createResolverDefinition(
+  private BeanDefinition createProviderDefinition(
       final ConfigurableListableBeanFactory beanFactory,
-      final ProviderMetaData metaData,
-      final List<StrategyBeanDefinition> beanDefinitions
+      final Class<?> interfaceClass,
+      final List<StrategyBeanDefinition> beanDefinitions,
+      final Supplier<List<Entry<Class, StrategyResolver>>> resolvers
   ) {
     final var strategyNames = beanDefinitions.stream()
         .map(StrategyBeanDefinition::getName)
         .toArray(String[]::new);
 
     final Supplier<?> providerSupplier = () -> {
-      final var resolverBean = (StrategyResolver) beanFactory.getBean(metaData.resolverClass);
+      final var resolverBean = resolvers.get()
+          .stream()
+          .filter(e -> beanDefinitions.stream()
+              .map(StrategyBeanDefinition::getType)
+              .allMatch(c -> AnnotationUtils.getAnnotation(c, e.getKey()) != null)
+          )
+          .map(Entry::getValue)
+          .findFirst()
+          .orElseThrow(() -> new IllegalStateException(
+              "Can't find matching resolver for strategies: " + beanDefinitions)
+          );
+
       final var strategies = Arrays.stream(strategyNames)
           .map(beanFactory::getBean)
-          .collect(Collectors.toList());
+          .collect(Collectors.toUnmodifiableList());
 
       resolverBean.setStrategies(strategies);
 
-      return strategyProviderFactory
-          .createProviderForInterface(metaData.interfaceClass, resolverBean);
+      return this.strategyProviderFactory
+          .createProviderForInterface(interfaceClass, resolverBean);
     };
 
     final var result = new GenericBeanDefinition();
 
-    result.setBeanClass(metaData.interfaceClass);
+    result.setBeanClass(interfaceClass);
     result.setInstanceSupplier(providerSupplier);
     result.setPrimary(true);
     result.setDependsOn(strategyNames);
@@ -127,12 +157,5 @@ public class StrategyAnnotationProcessor implements BeanFactoryPostProcessor {
 
     private String name;
     private Class<?> type;
-  }
-
-  @Value
-  private static class ProviderMetaData {
-
-    private Class<?> interfaceClass;
-    private Class<?> resolverClass;
   }
 }
