@@ -33,7 +33,7 @@ public class SupplierUtils {
       if (!this.initialized) {
         synchronized (this) {
           if (!this.initialized) {
-            final T t = this.delegate.get();
+            final var t = this.delegate.get();
             this.value = t;
             this.initialized = true;
             return t;
