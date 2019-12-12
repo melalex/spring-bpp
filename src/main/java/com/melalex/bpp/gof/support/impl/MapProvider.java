@@ -33,7 +33,7 @@ public final class MapProvider<K, V> implements Provider<K, V>, BeanNameAware {
 
   @Override
   public V provide(final K key) {
-    final V value = this.map.get(key);
+    final var value = this.map.get(key);
 
     if (value == null && this.defaultValue != null) {
       log.warn("( {} ) has no value for key [ {} ]. Returning [ {} ].", this.beanName, key,

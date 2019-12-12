@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.AllArgsConstructor;
 
+import com.melalex.bpp.aapi.service.AapiPingService;
 import com.melalex.bpp.annotation.service.AnnotatedPingService;
 import com.melalex.bpp.annotation.service.AnnotatedWithAbstractAncestorPingService;
 import com.melalex.bpp.gof.service.GofPingService;
@@ -21,6 +22,7 @@ public class PingController {
   private final AnnotatedPingService annotatedPingService;
   private final GofPingService gofPingService;
   private final SpringPingService springPingService;
+  private final AapiPingService aapiPingService;
 
   @GetMapping("/annotation/withAbstractAncestor")
   public PingDto pingAnnotatedWithAbstractAncestorPingService() {
@@ -40,5 +42,10 @@ public class PingController {
   @GetMapping("/spring")
   public PingDto pingSpringPingService() {
     return this.springPingService.ping();
+  }
+
+  @GetMapping("/aapi")
+  public PingDto pingAapiPingService() {
+    return this.aapiPingService.ping();
   }
 }
