@@ -1,14 +1,8 @@
 package com.melalex.bpp.web.session;
 
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.SessionScope;
+public interface UserContext {
 
-import lombok.Data;
+  boolean isCassandra();
 
-@Data
-@Component
-@SessionScope
-public class UserContext {
-
-  private boolean cassandra;
+  void setCassandra(final boolean cassandra);
 }

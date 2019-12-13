@@ -3,6 +3,7 @@ package com.melalex.bpp.spring;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -28,7 +29,7 @@ public class SpringStrategyConfiguration {
 
   @Bean
   @Primary
-  @Scope(scopeName = "prototype", proxyMode = ScopedProxyMode.INTERFACES)
+  @Scope(scopeName = BeanDefinition.SCOPE_PROTOTYPE, proxyMode = ScopedProxyMode.INTERFACES)
   public SpringPingService springPingService() {
     return this.booleanSpringPingServiceMap().get(this.userContext.isCassandra());
   }
